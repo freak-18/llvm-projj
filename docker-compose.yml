@@ -1,0 +1,90 @@
+version: "3.9"
+
+# ObfusShield AI — Full Production Stack
+# Start: docker-compose up --build
+# Services: frontend, backend, ai_service, llvm_service
+
+services:
+  # ── Node.js API Backend ──────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: obfusshield-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGO_URI: ${MONGO_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      AI_SERVICE_URL: http://ai_service:8000
+      LLVM_SERVICE_URL: http://llvm_service:9000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      UPLOAD_DIR: /app/uploads
+      LOVABLE_API_KEY: ${LOVABLE_API_KEY:-}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - ai_service
+      - llvm_service
+    networks:
+      - obfusshield
+
+  # ── FastAPI AI Service ────────────────────────────────────────────────────
+  ai_service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: obfusshield-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: "1"
+    networks:
+      - obfusshield
+
+  # ── LLVM Obfuscation Service ──────────────────────────────────────────────
+  llvm_service:
+    build:
+      context: ./llvm_service
+      dockerfile: Dockerfile
+    container_name: obfusshield-llvm
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      PYTHONUNBUFFERED: "1"
+      LLVM_BIN: /usr/bin
+      LLVM_WORK_DIR: /tmp/obfusshield
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - obfusshield
+
+  # ── React Frontend (Vite preview) ─────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: obfusshield-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:4000}
+      VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:4000}
+    depends_on:
+      - backend
+    networks:
+      - obfusshield
+
+volumes:
+  uploads_data:
+
+networks:
+  obfusshield:
+    driver: bridge

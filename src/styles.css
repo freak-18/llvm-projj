@@ -1,0 +1,254 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-cyan: var(--cyan);
+  --color-purple: var(--purple);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--destructive);
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.75rem;
+  /* Dark cybersecurity theme — applied at :root so the whole app is dark */
+  --background: oklch(0.16 0.03 260);
+  --foreground: oklch(0.97 0.01 250);
+  --card: oklch(0.21 0.03 262);
+  --card-foreground: oklch(0.97 0.01 250);
+  --popover: oklch(0.21 0.03 262);
+  --popover-foreground: oklch(0.97 0.01 250);
+  --primary: oklch(0.66 0.19 256);          /* #3B82F6 accent blue */
+  --primary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.27 0.04 260);
+  --secondary-foreground: oklch(0.97 0.01 250);
+  --muted: oklch(0.25 0.03 260);
+  --muted-foreground: oklch(0.72 0.03 256);
+  --accent: oklch(0.3 0.06 256);
+  --accent-foreground: oklch(0.97 0.01 250);
+  --destructive: oklch(0.65 0.22 25);       /* #EF4444 */
+  --destructive-foreground: oklch(0.98 0.01 250);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.66 0.19 256);
+  --cyan: oklch(0.78 0.14 200);             /* #06B6D4 */
+  --purple: oklch(0.66 0.21 295);           /* #8B5CF6 */
+  --success: oklch(0.72 0.17 160);          /* #10B981 */
+  --warning: oklch(0.78 0.17 70);           /* #F59E0B */
+
+  --gradient-hero: radial-gradient(ellipse at top, oklch(0.66 0.19 256 / 0.25), transparent 60%),
+                   radial-gradient(ellipse at bottom right, oklch(0.66 0.21 295 / 0.18), transparent 55%),
+                   linear-gradient(180deg, oklch(0.16 0.03 260), oklch(0.13 0.025 260));
+  --gradient-primary: linear-gradient(135deg, oklch(0.66 0.19 256), oklch(0.78 0.14 200));
+  --gradient-accent: linear-gradient(135deg, oklch(0.66 0.21 295), oklch(0.66 0.19 256));
+  --shadow-glow: 0 0 40px -10px oklch(0.66 0.19 256 / 0.6);
+  --shadow-card: 0 8px 32px -8px oklch(0 0 0 / 0.4), 0 0 0 1px oklch(1 0 0 / 0.05);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, oklch(0.66 0.19 256 / 0.08), transparent 50%),
+      radial-gradient(circle at 80% 100%, oklch(0.66 0.21 295 / 0.06), transparent 50%);
+    background-attachment: fixed;
+  }
+  ::selection { background: oklch(0.66 0.19 256 / 0.4); }
+}
+
+@utility glass {
+  background: linear-gradient(180deg, oklch(1 0 0 / 0.04), oklch(1 0 0 / 0.01));
+  border: 1px solid oklch(1 0 0 / 0.08);
+  backdrop-filter: blur(12px);
+}
+
+@utility glow-border {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--gradient-primary);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@utility text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+@utility hero-bg { background: var(--gradient-hero); }
+
+@utility grid-bg {
+  background-image:
+    linear-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black, transparent 75%);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 30px -10px oklch(0.66 0.19 256 / 0.5); }
+  50% { box-shadow: 0 0 60px -10px oklch(0.66 0.19 256 / 0.9); }
+}
+@utility animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+@utility animate-scan { animation: scan 4s linear infinite; }
+
+/* --- Hover system: cursor-reactive spotlight, trace border, lift+glow, minimal fade --- */
+
+@utility spotlight-card {
+  position: relative;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms ease, border-color 300ms ease;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* natural (auto) stacking: paints above the card's own background/backdrop-filter,
+       below real content — a negative z-index here would sink it under backdrop-filter
+       in some browsers, making it look like it's glowing from behind the card. */
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 400ms ease;
+    background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%),
+      oklch(0.66 0.19 256 / 0.16), transparent 65%);
+    pointer-events: none;
+  }
+  &:hover {
+    transform: translateY(-3px);
+    border-color: oklch(0.66 0.19 256 / 0.35);
+    box-shadow: 0 16px 40px -16px oklch(0 0 0 / 0.5);
+  }
+  &:hover::before { opacity: 1; }
+}
+
+@utility trace-border {
+  position: relative;
+  isolation: isolate;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(from var(--trace-angle, 0deg),
+      oklch(0.66 0.19 256), oklch(0.78 0.14 200), oklch(0.66 0.21 295), oklch(0.66 0.19 256));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 300ms ease;
+    animation: trace-spin 3s linear infinite paused;
+  }
+  &:hover::after { opacity: 1; animation-play-state: running; }
+}
+@keyframes trace-spin {
+  to { --trace-angle: 360deg; }
+}
+@property --trace-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@utility lift-glow {
+  transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 250ms ease;
+  &:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+@utility fade-hover {
+  transition: opacity 200ms ease, color 200ms ease;
+  opacity: 0.72;
+  &:hover { opacity: 1; }
+}
+
+/* --- Ambient background: a calm, static dot-grid backdrop (no cursor tracking) --- */
+
+@utility ambient-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(oklch(1 0 0 / 0.14) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* Camera-focus style corner brackets that snap onto a card on hover — contained to the
+   element itself, no global mouse tracking, so it stays crisp instead of "scanning". */
+@utility corner-frame {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: calc(var(--radius) - 4px);
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 250ms ease, transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+    --cf-c: oklch(0.78 0.14 200 / 0.85);
+    --cf-len: 16px;
+    background:
+      linear-gradient(to right, var(--cf-c) 2px, transparent 2px) top left / var(--cf-len) 2px no-repeat,
+      linear-gradient(to bottom, var(--cf-c) 2px, transparent 2px) top left / 2px var(--cf-len) no-repeat,
+      linear-gradient(to left, var(--cf-c) 2px, transparent 2px) top right / var(--cf-len) 2px no-repeat,
+      linear-gradient(to bottom, var(--cf-c) 2px, transparent 2px) top right / 2px var(--cf-len) no-repeat,
+      linear-gradient(to right, var(--cf-c) 2px, transparent 2px) bottom left / var(--cf-len) 2px no-repeat,
+      linear-gradient(to top, var(--cf-c) 2px, transparent 2px) bottom left / 2px var(--cf-len) no-repeat,
+      linear-gradient(to left, var(--cf-c) 2px, transparent 2px) bottom right / var(--cf-len) 2px no-repeat,
+      linear-gradient(to top, var(--cf-c) 2px, transparent 2px) bottom right / 2px var(--cf-len) no-repeat;
+  }
+  &:hover::after { opacity: 1; transform: scale(1); }
+}

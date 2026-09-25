@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: obfusshield-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: AI_SERVICE_URL
+        fromService:
+          name: obfusshield-ai
+          type: web
+          property: hostport
+      - key: LLVM_SERVICE_URL
+        fromService:
+          name: obfusshield-llvm
+          type: web
+          property: hostport
+      - key: FRONTEND_URL
+        sync: false
+      - key: UPLOAD_DIR
+        value: /app/uploads
+
+  - type: web
+    name: obfusshield-ai
+    runtime: docker
+    rootDir: ai_service
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+  - type: web
+    name: obfusshield-llvm
+    runtime: docker
+    rootDir: llvm_service
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"

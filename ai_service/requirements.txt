@@ -1,0 +1,16 @@
+# All packages with Python 3.13 prebuilt wheels — no Rust/C compilation needed
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+
+# tree-sitter 0.23+ ships prebuilt wheels for Python 3.13
+tree-sitter>=0.23.0
+tree-sitter-c>=0.23.0
+tree-sitter-cpp>=0.23.0
+
+# Numeric helpers
+numpy>=2.0.0
+
+# HTTP + multipart
+python-multipart>=0.0.9
+httpx>=0.27.0
