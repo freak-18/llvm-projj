@@ -67,8 +67,13 @@ router.get(
         let resolved = null;
         for (const p of candidates) {
           if (p && fs.existsSync(p)) {
-            resolved = p;
-            break;
+            try {
+              const stat = fs.statSync(p);
+              if (stat.size > 120) {
+                resolved = p;
+                break;
+              }
+            } catch {}
           }
         }
 
