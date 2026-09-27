@@ -18,7 +18,7 @@ router.post(
   [
     body("name").trim().isLength({ min: 1, max: 120 }),
     body("description").optional().trim().isLength({ max: 2000 }),
-    body("language").isIn(["c", "c++", "rust", "go"]),
+    body("language").isIn(["c", "c++", "rust", "go", "python", "java"]),
     body("protectionProfile").isIn(["basic", "advanced", "enterprise", "military"]),
     body("files").isArray({ min: 1, max: 20 }),
     body("files.*.filename").trim().isLength({ min: 1, max: 200 }),
