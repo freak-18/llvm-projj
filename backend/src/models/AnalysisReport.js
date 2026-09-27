@@ -5,7 +5,7 @@ const sensitiveFunctionSchema = new mongoose.Schema({
   riskScore: { type: Number, min: 0, max: 100 },
   category: {
     type: String,
-    enum: ["authentication", "encryption", "license", "payment", "secret", "business-logic", "api-key", "other"],
+    enum: ["authentication", "encryption", "license", "payment", "secret", "business-logic", "api-key", "auth", "crypto", "other"],
   },
   reason: String,
   recommendedTechniques: [String],
@@ -43,10 +43,10 @@ const analysisReportSchema = new mongoose.Schema(
       protectedFunctionsPct: Number,
     },
     rawAiResponse: String,
-    // Source: "ai_service" or "ai_gateway" (Lovable/Gemini fallback)
+    // Source: "ai_service", "ai_gateway" (Lovable/Gemini fallback), or "mock"
     analysisSource: {
       type: String,
-      enum: ["ai_service", "ai_gateway"],
+      enum: ["ai_service", "ai_gateway", "mock"],
       default: "ai_service",
     },
   },

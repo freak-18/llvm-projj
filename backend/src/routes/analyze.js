@@ -159,13 +159,21 @@ router.post(
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function normaliseFunctions(fns) {
-  return fns.map((fn) => ({
-    name: fn.name,
-    riskScore: fn.risk_score ?? fn.riskScore ?? 50,
-    category: fn.category ?? "other",
-    reason: fn.reason,
-    recommendedTechniques: fn.recommended_techniques ?? fn.recommendedTechniques ?? [],
-  }));
+  const categoryMap = {
+    auth: "authentication",
+    crypto: "encryption",
+  };
+  return fns.map((fn) => {
+    const rawCat = fn.category ?? "other";
+    const category = categoryMap[rawCat] || rawCat;
+    return {
+      name: fn.name,
+      riskScore: fn.risk_score ?? fn.riskScore ?? 50,
+      category,
+      reason: fn.reason || "Detected sensitive routine requiring obfuscation protection.",
+      recommendedTechniques: fn.recommended_techniques ?? fn.recommendedTechniques ?? [],
+    };
+  });
 }
 
 /**
