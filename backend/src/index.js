@@ -5,6 +5,8 @@ const { connectDB } = require("./config/db");
 const logger = require("./utils/logger");
 const { Server: SocketIO } = require("socket.io");
 
+const { isAllowedOrigin } = require("./utils/corsConfig");
+
 const PORT = process.env.PORT || 4000;
 
 async function bootstrap() {
@@ -17,7 +19,12 @@ async function bootstrap() {
   // ── Socket.IO ────────────────────────────────────────────────────────────
   const io = new SocketIO(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:3000",
+      origin: (origin, callback) => {
+        if (isAllowedOrigin(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error("CORS blocked"));
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },
