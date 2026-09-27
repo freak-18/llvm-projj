@@ -183,7 +183,7 @@ export async function getMetrics(projectId: string) {
 }
 
 // ── Downloads ─────────────────────────────────────────────────────────────
-export function getDownloadUrl(id: string, type: "report" | "binary" = "report"): string {
+export function getDownloadUrl(id: string, type: "report" | "binary" | "source" = "report"): string {
   const token = localStorage.getItem("obfus_token") || "";
   return `${API_URL}/api/download/${id}?type=${type}&token=${encodeURIComponent(token)}`;
 }

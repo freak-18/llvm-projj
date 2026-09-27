@@ -59,13 +59,20 @@ function DownloadsPage() {
                 </div>
 
                 {/* Download buttons */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <a
                     href={getDownloadUrl(p._id, "binary")}
                     className="trace-border inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow-[var(--shadow-glow)] hover:scale-[1.02] transition"
                   >
                     <Package className="h-4 w-4" />
                     Binary (.o)
+                  </a>
+                  <a
+                    href={getDownloadUrl(p._id, "source")}
+                    className="lift-glow inline-flex items-center gap-2 rounded-xl glass hover:bg-accent px-4 py-2 text-sm"
+                  >
+                    <FileText className="h-4 w-4 text-[oklch(0.72_0.17_160)]" />
+                    Source (.c)
                   </a>
                   <a
                     href={getDownloadUrl(p._id, "report")}
