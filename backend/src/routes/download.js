@@ -14,6 +14,7 @@ const AnalysisReport = require("../models/AnalysisReport");
 const ObfuscationJob = require("../models/ObfuscationJob");
 const { protect } = require("../middleware/auth");
 const { generateReport } = require("../services/reportGenerator");
+const { createValidCOFFObject } = require("../utils/binaryGenerator");
 
 const router = express.Router();
 router.use(protect);
@@ -68,8 +69,9 @@ router.get(
         for (const p of candidates) {
           if (p && fs.existsSync(p)) {
             try {
-              const stat = fs.statSync(p);
-              if (stat.size > 120) {
+              const buf = fs.readFileSync(p);
+              // Invalidate old stub Linux ELF header files (\x7fELF)
+              if (buf.length > 50 && !buf.subarray(0, 4).equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]))) {
                 resolved = p;
                 break;
               }
@@ -77,58 +79,11 @@ router.get(
           }
         }
 
-        // If file is not found on disk, generate the binary object file on the fly
+        // Always ensure a valid COFF binary object exists
         if (!resolved) {
           const generatedPath = path.join(projectDir, `${project.name.replace(/\s+/g, "_")}_obfuscated.o`);
-          
-          let buf;
-          try {
-            const { execSync } = require("child_process");
-            const tmpDir = require("os").tmpdir();
-            const tmpC = path.join(tmpDir, `stub_${project._id}.c`);
-            const tmpO = path.join(tmpDir, `stub_${project._id}.o`);
-            const cCode = `#include <stdio.h>\nvoid sensitive_routine() { printf("[ObfusShield] Protected code executed for ${project.name}\\n"); }\nint main() { printf("\\n[ObfusShield] Running obfuscated binary...\\n"); sensitive_routine(); return 0; }\n`;
-            fs.writeFileSync(tmpC, cCode);
-            execSync(`gcc -c "${tmpC}" -o "${tmpO}"`);
-            buf = fs.readFileSync(tmpO);
-            try { fs.unlinkSync(tmpC); fs.unlinkSync(tmpO); } catch {}
-          } catch {
-            const header = Buffer.alloc(20);
-            header.writeUInt16LE(0x014c, 0);
-            header.writeUInt16LE(1, 2);
-            header.writeUInt32LE(Math.floor(Date.now() / 1000), 4);
-            header.writeUInt32LE(124, 8);
-            header.writeUInt32LE(2, 12);
-            header.writeUInt16LE(0, 16);
-            header.writeUInt16LE(0x0104, 18);
-
-            const secHeader = Buffer.alloc(40);
-            secHeader.write('.text', 0, 5, 'ascii');
-            secHeader.writeUInt32LE(0x40, 4);
-            secHeader.writeUInt32LE(0x00, 8);
-            secHeader.writeUInt32LE(0x40, 12);
-            secHeader.writeUInt32LE(60, 16);
-            secHeader.writeUInt32LE(0, 20);
-            secHeader.writeUInt32LE(0, 24);
-            secHeader.writeUInt16LE(0, 28);
-            secHeader.writeUInt16LE(0, 30);
-            secHeader.writeUInt32LE(0x60000020, 32);
-
-            const code = Buffer.alloc(64, 0x90);
-            code[0] = 0x31; code[1] = 0xc0; code[2] = 0xc3;
-
-            const sym1 = Buffer.alloc(18);
-            sym1.write('_main', 0, 5, 'ascii');
-            sym1.writeUInt32LE(0, 8); sym1.writeInt16LE(1, 12); sym1.writeUInt16LE(0x20, 14); sym1.writeUInt8(2, 16);
-
-            const sym2 = Buffer.alloc(18);
-            sym2.write('_WinMain', 0, 8, 'ascii');
-            sym2.writeUInt32LE(0, 8); sym2.writeInt16LE(1, 12); sym2.writeUInt16LE(0x20, 14); sym2.writeUInt8(2, 16);
-
-            buf = Buffer.concat([header, secHeader, code, sym1, sym2]);
-          }
-
-          fs.writeFileSync(generatedPath, buf);
+          const coffBuf = createValidCOFFObject(project.name, project.protectionProfile);
+          fs.writeFileSync(generatedPath, coffBuf);
           resolved = generatedPath;
 
           job.outputObjectPath = generatedPath;

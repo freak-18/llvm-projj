@@ -20,6 +20,7 @@ const SecurityMetrics = require("../models/SecurityMetrics");
 const { protect } = require("../middleware/auth");
 const llvmService = require("../services/llvmService");
 const logger = require("../utils/logger");
+const { createValidCOFFObject } = require("../utils/binaryGenerator");
 
 const router = express.Router();
 router.use(protect);
@@ -41,13 +42,8 @@ function generateMockObfuscation(profile, project) {
   fs.mkdirSync(projectDir, { recursive: true });
   const objectPath = path.join(projectDir, `${(project?.name || "project").replace(/\s+/g, "_")}_obfuscated.o`);
 
-  const elfHeader = Buffer.from([
-    0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01, 0x01, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x01, 0x00, 0x3e, 0x00, 0x01, 0x00, 0x00, 0x00,
-  ]);
-  const comment = Buffer.from(`\n; ObfusShield hardened object file for ${project?.name || "project"}\n; Profile: ${profile}\n`);
-  fs.writeFileSync(objectPath, Buffer.concat([elfHeader, comment]));
+  const coffBuf = createValidCOFFObject(project?.name || "project", profile || "advanced");
+  fs.writeFileSync(objectPath, coffBuf);
 
   return {
     metrics: {
