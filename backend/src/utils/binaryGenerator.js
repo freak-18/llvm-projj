@@ -2,35 +2,17 @@ const path = require("path");
 const fs = require("fs");
 
 /**
- * Generates a valid COFF binary object file (.o) compatible with gcc, clang, and ld.
- * Contains .text section with valid entry point & symbol table (_main, _WinMain).
+ * Generates a valid 32-bit Windows PE/COFF binary object file (.o) compatible with gcc, clang, and ld on Windows.
+ * Contains .text section with valid x86 entry point & symbol table (_main, _WinMain).
  */
 function createValidCOFFObject(projectName = "project", profile = "advanced") {
-  // Try using gcc if available on the system
-  try {
-    const { execSync } = require("child_process");
-    const tmpDir = require("os").tmpdir();
-    const pid = process.pid + "_" + Math.floor(Math.random() * 100000);
-    const tmpC = path.join(tmpDir, `stub_${pid}.c`);
-    const tmpO = path.join(tmpDir, `stub_${pid}.o`);
-
-    const cCode = `#include <stdio.h>\nvoid sensitive_routine() { printf("[ObfusShield] Protected routine executed for: ${projectName}\\n"); printf("[ObfusShield] Profile: ${profile}\\n"); }\nint main() { printf("\\n==================================================\\n  [ObfusShield] Hardened Binary Executing...\\n==================================================\\n"); sensitive_routine(); return 0; }\n`;
-    fs.writeFileSync(tmpC, cCode);
-    execSync(`gcc -c "${tmpC}" -o "${tmpO}"`);
-    const buf = fs.readFileSync(tmpO);
-    try { fs.unlinkSync(tmpC); fs.unlinkSync(tmpO); } catch {}
-    if (buf && buf.length > 50) return buf;
-  } catch {
-    // Fall back to pure JS COFF generator if gcc not installed on host
-  }
-
-  // Pure JavaScript COFF binary generator (x86 i386 COFF format)
+  // Pure JavaScript Windows PE/COFF binary generator (x86 i386 COFF format)
   const header = Buffer.alloc(20);
   header.writeUInt16LE(0x014c, 0); // Machine: i386 (32-bit Windows COFF)
   header.writeUInt16LE(1, 2);      // Number of sections: 1 (.text)
   header.writeUInt32LE(Math.floor(Date.now() / 1000), 4);
-  header.writeUInt32LE(124, 8);    // Symbol table offset
-  header.writeUInt32LE(2, 12);     // Number of symbols: 2
+  header.writeUInt32LE(124, 8);    // Symbol table offset (20 + 40 + 64 = 124)
+  header.writeUInt32LE(2, 12);     // Number of symbols: 2 (_main, _WinMain)
   header.writeUInt16LE(0, 16);     // SizeOfOptionalHeader
   header.writeUInt16LE(0x0104, 18); // Characteristics
 
