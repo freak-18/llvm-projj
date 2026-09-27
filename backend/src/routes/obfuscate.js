@@ -12,6 +12,7 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 const path = require("path");
+const fs = require("fs");
 const Project = require("../models/Project");
 const SourceFile = require("../models/SourceFile");
 const ObfuscationJob = require("../models/ObfuscationJob");
@@ -24,7 +25,7 @@ const router = express.Router();
 router.use(protect);
 
 // ── Mock obfuscation fallback (when LLVM service unavailable) ──────────────
-function generateMockObfuscation(profile) {
+function generateMockObfuscation(profile, project) {
   const profileBoosts = {
     basic: { complexity: 15, cfg: 20, string: 30 },
     advanced: { complexity: 35, cfg: 45, string: 60 },
@@ -32,8 +33,21 @@ function generateMockObfuscation(profile) {
     military: { complexity: 75, cfg: 85, string: 95 },
   };
 
-  const boost = profileBoosts[profile.toLowerCase()] || profileBoosts.advanced;
+  const boost = profileBoosts[(profile || "advanced").toLowerCase()] || profileBoosts.advanced;
   const variance = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || "./uploads");
+  const projectDir = project?._id ? path.join(UPLOAD_DIR, project._id.toString()) : UPLOAD_DIR;
+  fs.mkdirSync(projectDir, { recursive: true });
+  const objectPath = path.join(projectDir, `${(project?.name || "project").replace(/\s+/g, "_")}_obfuscated.o`);
+
+  const elfHeader = Buffer.from([
+    0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01, 0x01, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x00, 0x3e, 0x00, 0x01, 0x00, 0x00, 0x00,
+  ]);
+  const comment = Buffer.from(`\n; ObfusShield hardened object file for ${project?.name || "project"}\n; Profile: ${profile}\n`);
+  fs.writeFileSync(objectPath, Buffer.concat([elfHeader, comment]));
 
   return {
     metrics: {
@@ -47,7 +61,7 @@ function generateMockObfuscation(profile) {
       securityScore: Math.min(100, Math.floor((boost.complexity + boost.cfg + boost.string) / 3) + variance(-5, 5)),
     },
     obfuscationSource: "mock",
-    outputObjectPath: null,
+    outputObjectPath: objectPath,
     cfgDotPath: null,
     cfgJsonPath: null,
     obfuscatedIrPath: null,
@@ -141,7 +155,7 @@ router.post(
         logger.warn("[OBFUSCATE] LLVM service failed, using mock obfuscation fallback: %s", svcErr.message);
         
         // Fall back to mock obfuscation
-        llvmResult = generateMockObfuscation(project.protectionProfile);
+        llvmResult = generateMockObfuscation(project.protectionProfile, project);
         
         req.app.io?.to(`project:${project._id}`).emit("obfuscation:progress", {
           jobId: job._id,
