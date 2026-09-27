@@ -26,6 +26,71 @@ const router = express.Router();
 router.use(protect);
 
 // ── Mock obfuscation fallback (when LLVM service unavailable) ──────────────
+function generateMockCFG(profile) {
+  const profilePasses = {
+    basic:      ["SymbolRenaming", "DeadCode", "StringObf"],
+    advanced:   ["CFF", "StringEnc", "InstSub", "BogousCF", "SymRename"],
+    enterprise: ["CFF", "StringEnc", "BogousCF", "InstSub", "Opaques", "FuncSplit", "AntiDbg"],
+    military:   ["CFF", "StringEnc", "BogousCF", "InstSub", "Opaques", "FuncSplit", "AntiDbg", "AntiTamper", "Virt"],
+  };
+  const passes = profilePasses[(profile || "advanced").toLowerCase()] ?? profilePasses.advanced;
+
+  // Build nodes: entry → pass nodes → dispatcher → basic blocks → merge → exit
+  const nodes = [
+    { id: "entry",       data: { label: "entry:\nAlloca / Args" } },
+    { id: "obfus_init",  data: { label: "obfus_init:\n_obfus_key = 0x1337" } },
+  ];
+
+  // One node per obfuscation pass
+  passes.forEach((p, i) => {
+    nodes.push({ id: `pass_${i}`, data: { label: `${p}:\n%bb${i} = phi i32` } });
+  });
+
+  // Dispatcher (control flow flattening switch)
+  nodes.push({ id: "dispatcher",  data: { label: "switch.dispatch:\nswitch i32 %state" } });
+
+  // Basic blocks (simulated flattened blocks)
+  const blockCount = Math.min(passes.length + 2, 8);
+  for (let i = 0; i < blockCount; i++) {
+    nodes.push({ id: `bb${i}`, data: { label: `bb${i}:\n%r${i} = xor i32 %a, %b\nbr label %merge` } });
+  }
+
+  nodes.push({ id: "merge",  data: { label: "merge:\n%phi = phi i32" } });
+  nodes.push({ id: "exit",   data: { label: "exit:\nret i32 0" } });
+
+  // Build edges
+  const edges = [];
+  let edgeId = 0;
+
+  // entry → obfus_init → first pass
+  edges.push({ id: `e${edgeId++}`, source: "entry",      target: "obfus_init" });
+  edges.push({ id: `e${edgeId++}`, source: "obfus_init", target: passes.length ? "pass_0" : "dispatcher" });
+
+  // pass chain → dispatcher
+  passes.forEach((_, i) => {
+    const next = i + 1 < passes.length ? `pass_${i + 1}` : "dispatcher";
+    edges.push({ id: `e${edgeId++}`, source: `pass_${i}`, target: next });
+  });
+
+  // dispatcher → basic blocks (bogus conditional branches)
+  for (let i = 0; i < blockCount; i++) {
+    edges.push({ id: `e${edgeId++}`, source: "dispatcher", target: `bb${i}` });
+  }
+
+  // basic blocks → merge
+  for (let i = 0; i < blockCount; i++) {
+    edges.push({ id: `e${edgeId++}`, source: `bb${i}`, target: "merge" });
+  }
+
+  // merge → exit
+  edges.push({ id: `e${edgeId++}`, source: "merge", target: "exit" });
+
+  // Bogus back-edge (opaque predicate loop)
+  edges.push({ id: `e${edgeId++}`, source: "merge", target: "dispatcher", label: "[opaque=false]" });
+
+  return { nodes, edges };
+}
+
 function generateMockObfuscation(profile, project) {
   const profileBoosts = {
     basic: { complexity: 15, cfg: 20, string: 30 },
@@ -58,6 +123,7 @@ function generateMockObfuscation(profile, project) {
     },
     obfuscationSource: "mock",
     outputObjectPath: objectPath,
+    cfgJson: generateMockCFG(profile),
     cfgDotPath: null,
     cfgJsonPath: null,
     obfuscatedIrPath: null,
@@ -167,6 +233,7 @@ router.post(
       job.outputObjectPath = llvmResult.outputObjectPath ?? null;
       job.cfgDotPath = llvmResult.cfgDotPath ?? null;
       job.cfgJsonPath = llvmResult.cfgJsonPath ?? null;
+      job.cfgJson = llvmResult.cfgJson ?? null;
       job.obfuscatedIrPath = llvmResult.obfuscatedIrPath ?? null;
       await job.save();
 

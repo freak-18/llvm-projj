@@ -40,6 +40,8 @@ const obfuscationJobSchema = new mongoose.Schema(
     // CFG dot file path for visualization
     cfgDotPath: String,
     cfgJsonPath: String,
+    // Inline CFG graph JSON (nodes + edges) for React Flow
+    cfgJson: { type: mongoose.Schema.Types.Mixed, default: null },
     // Final report PDF path
     reportPdfPath: String,
     // Error message if failed
