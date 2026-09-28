@@ -255,21 +255,41 @@ function labelValue(doc, label, value) {
 }
 
 function metricsTable(doc, rows) {
-  const ROW_HEIGHT = 22;
+  const PADDING = 5;
+  const COL_LABEL_X = 58;
+  const COL_VALUE_X = 260;
+  const COL_WIDTH = 200;
+  const ROW_GAP = 2;
+  const bottomLimit = doc.page.height - doc.page.margins.bottom;
+
   rows.forEach(([label, value]) => {
+    const labelStr = String(label);
+    const valueStr = String(value);
+
+    doc.font("Helvetica").fontSize(10);
+    const labelHeight = doc.heightOfString(labelStr, { width: COL_WIDTH });
+    doc.font("Helvetica-Bold").fontSize(10);
+    const valueHeight = doc.heightOfString(valueStr, { width: COL_WIDTH });
+    const rowHeight = Math.max(labelHeight, valueHeight, 14) + PADDING * 2;
+
+    // Start a fresh page rather than splitting a row across two pages.
+    if (doc.y + rowHeight > bottomLimit) {
+      doc.addPage();
+    }
+
     const y = doc.y;
     doc
       .fillColor(BG_LIGHT)
-      .rect(50, y, doc.page.width - 100, 20)
+      .rect(50, y, doc.page.width - 100, rowHeight)
       .fill()
       .fillColor(TEXT_MUTED)
       .font("Helvetica")
       .fontSize(10)
-      .text(label, 58, y + 5, { width: 200 })
+      .text(labelStr, COL_LABEL_X, y + PADDING, { width: COL_WIDTH })
       .fillColor(TEXT_DARK)
       .font("Helvetica-Bold")
-      .text(String(value), 260, y + 5, { width: 200 });
-    doc.y = y + ROW_HEIGHT;
+      .text(valueStr, COL_VALUE_X, y + PADDING, { width: COL_WIDTH });
+    doc.y = y + rowHeight + ROW_GAP;
   });
 }
 
