@@ -73,7 +73,11 @@ async function generateReport({ project, files, analysis, job, outputDir }) {
       .fontSize(9)
       .text("/100", doc.page.width - 98, 114, { width: 40, align: "center" });
 
-    doc.moveDown(8);
+    // The score badge above was drawn with an absolute x near the right
+    // margin; reset the cursor so the flowing content below uses the
+    // full page width instead of the narrow column left of that x.
+    doc.x = doc.page.margins.left;
+    doc.y = 220;
 
     // ── Project Details ────────────────────────────────────────────────────
     section(doc, "Project Details");
