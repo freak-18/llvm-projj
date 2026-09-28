@@ -255,6 +255,7 @@ function labelValue(doc, label, value) {
 }
 
 function metricsTable(doc, rows) {
+  const ROW_HEIGHT = 22;
   rows.forEach(([label, value]) => {
     const y = doc.y;
     doc
@@ -268,7 +269,7 @@ function metricsTable(doc, rows) {
       .fillColor(TEXT_DARK)
       .font("Helvetica-Bold")
       .text(String(value), 260, y + 5, { width: 200 });
-    doc.moveDown(1.1);
+    doc.y = y + ROW_HEIGHT;
   });
 }
 
